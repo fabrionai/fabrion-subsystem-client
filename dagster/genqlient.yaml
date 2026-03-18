@@ -1,0 +1,25 @@
+# genqlient configuration for Dagster GraphQL client generation
+# See: https://github.com/Khan/genqlient/blob/main/docs/genqlient.yaml
+
+schema:
+  - schema.graphql
+
+operations:
+  - queries.graphql
+
+generated: gen/generated.go
+
+package: gen
+
+# Use context for all generated functions
+context_type: context.Context
+
+# Make optional struct fields use pointers with omitempty
+# This allows ExecutionMetadata to be nil when not provided
+use_struct_references: true
+
+# Custom type bindings for GraphQL scalars
+bindings:
+  # Map Float to float64 for Unix timestamps
+  Float:
+    type: float64

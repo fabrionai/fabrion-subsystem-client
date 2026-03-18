@@ -1,0 +1,243 @@
+# Minimal Dagster GraphQL schema for DataFabric integration
+# This is a static/mock schema based on Dagster's GraphQL API
+# Only includes types needed for orchestration operations
+
+type Query {
+  """Get a run by its ID"""
+  runOrError(runId: ID!): RunOrError!
+
+  """List runs with optional filtering"""
+  runsOrError(filter: RunsFilter, limit: Int): RunsOrError!
+
+  """List all repositories with their jobs"""
+  repositoriesOrError: RepositoriesOrError!
+}
+
+type Mutation {
+  """Launch a new pipeline/job run"""
+  launchRun(executionParams: ExecutionParams!): LaunchRunResult!
+
+  """Terminate a running pipeline/job"""
+  terminateRun(runId: String!): TerminateRunResult!
+}
+
+# ============ Input Types ============
+
+input ExecutionParams {
+  """Selector for the job/pipeline to execute"""
+  selector: JobSelector!
+
+  """Run configuration as YAML or JSON string"""
+  runConfigData: String
+
+  """Tags to apply to the run"""
+  executionMetadata: ExecutionMetadata
+}
+
+input JobSelector {
+  """Name of the repository location"""
+  repositoryLocationName: String!
+
+  """Name of the repository"""
+  repositoryName: String!
+
+  """Name of the job/pipeline"""
+  jobName: String!
+}
+
+input ExecutionMetadata {
+  """Tags as key-value pairs"""
+  tags: [ExecutionTag!]
+}
+
+input ExecutionTag {
+  key: String!
+  value: String!
+}
+
+input RunsFilter {
+  """Filter by run IDs"""
+  runIds: [String!]
+
+  """Filter by pipeline/job name"""
+  pipelineName: String
+
+  """Filter by run statuses"""
+  statuses: [RunStatus!]
+
+  """Filter by tags"""
+  tags: [ExecutionTag!]
+}
+
+# ============ Enums ============
+
+enum RunStatus {
+  QUEUED
+  NOT_STARTED
+  STARTING
+  MANAGED
+  STARTED
+  SUCCESS
+  FAILURE
+  CANCELING
+  CANCELED
+}
+
+# ============ Union Types ============
+
+union RunOrError = Run | RunNotFoundError | PythonError
+
+union RunsOrError = Runs | PythonError
+
+union RepositoriesOrError = RepositoryConnection | PythonError
+
+union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | ConflictingExecutionParamsError | PresetNotFoundError | PythonError | UnauthorizedError | RunConflict | NoModeProvidedError
+
+union TerminateRunResult = TerminateRunSuccess | TerminateRunFailure | RunNotFoundError | PythonError | UnauthorizedError
+
+# ============ Object Types ============
+
+type Run {
+  """Unique identifier for the run"""
+  runId: String!
+
+  """Name of the job/pipeline"""
+  jobName: String!
+
+  """Current status of the run"""
+  status: RunStatus!
+
+  """Unix timestamp when the run started"""
+  startTime: Float
+
+  """Unix timestamp when the run ended"""
+  endTime: Float
+
+  """Tags applied to the run"""
+  tags: [PipelineTag!]!
+}
+
+type PipelineTag {
+  key: String!
+  value: String!
+}
+
+type Runs {
+  """List of runs matching the filter"""
+  results: [Run!]!
+
+  """Total count of matching runs"""
+  count: Int!
+}
+
+type RepositoryConnection {
+  """List of repositories"""
+  nodes: [Repository!]!
+}
+
+type Repository {
+  """Name of the repository"""
+  name: String!
+
+  """Location of the repository"""
+  location: RepositoryLocation!
+
+  """Jobs defined in this repository"""
+  jobs: [Job!]!
+}
+
+type RepositoryLocation {
+  """Name of the repository location"""
+  name: String!
+}
+
+type Job {
+  """Name of the job"""
+  name: String!
+
+  """Description of the job"""
+  description: String
+}
+
+# ============ Success Types ============
+
+type LaunchRunSuccess {
+  """The launched run"""
+  run: Run!
+}
+
+type TerminateRunSuccess {
+  """The terminated run"""
+  run: Run!
+}
+
+# ============ Error Types ============
+
+type RunNotFoundError {
+  runId: String!
+  message: String!
+}
+
+type TerminateRunFailure {
+  run: Run!
+  message: String!
+}
+
+type PythonError {
+  message: String!
+  stack: [String!]!
+  errorChain: [ErrorChainLink!]!
+}
+
+type ErrorChainLink {
+  error: PythonError!
+  isExplicitLink: Boolean!
+}
+
+type InvalidStepError {
+  invalidStepKey: String!
+}
+
+type InvalidOutputError {
+  stepKey: String!
+  invalidOutputName: String!
+}
+
+type RunConfigValidationInvalid {
+  pipelineName: String!
+  errors: [PipelineConfigValidationError!]!
+}
+
+type PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  reason: String!
+}
+
+type PipelineNotFoundError {
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+  message: String!
+}
+
+type ConflictingExecutionParamsError {
+  message: String!
+}
+
+type PresetNotFoundError {
+  preset: String!
+  message: String!
+}
+
+type UnauthorizedError {
+  message: String!
+}
+
+type RunConflict {
+  message: String!
+}
+
+type NoModeProvidedError {
+  message: String!
+}

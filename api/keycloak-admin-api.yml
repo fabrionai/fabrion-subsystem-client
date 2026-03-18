@@ -1,0 +1,970 @@
+openapi: 3.0.3
+info:
+  title: Keycloak Admin REST API (Curated Subset)
+  description: Subset of the Keycloak Admin REST API covering roles, users, groups, and role-mappings. Extracted from the
+    official Keycloak OpenAPI spec.
+  version: '1.0'
+servers:
+- url: '{baseUrl}'
+  variables:
+    baseUrl:
+      default: http://localhost:8080
+paths:
+  /admin/realms/{realm}/roles:
+    get:
+      tags:
+      - Roles
+      summary: Get all roles for the realm or client
+      parameters:
+      - name: briefRepresentation
+        in: query
+        schema:
+          default: true
+          type: boolean
+      - name: first
+        in: query
+        schema:
+          format: int32
+          type: integer
+      - name: max
+        in: query
+        schema:
+          format: int32
+          type: integer
+      - name: search
+        in: query
+        schema:
+          default: ''
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleRepresentation'
+        '403':
+          description: Forbidden
+    post:
+      tags:
+      - Roles
+      summary: Create a new role for the realm or client
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRepresentation'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+        '500':
+          description: Internal Server Error
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/roles/{role-name}:
+    get:
+      tags:
+      - Roles
+      summary: Get a role by name
+      parameters:
+      - name: role-name
+        in: path
+        description: role's name (not id!)
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleRepresentation'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+    put:
+      tags:
+      - Roles
+      summary: Update a role by name
+      parameters:
+      - name: role-name
+        in: path
+        description: role's name (not id!)
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRepresentation'
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+    delete:
+      tags:
+      - Roles
+      summary: Delete a role by name
+      parameters:
+      - name: role-name
+        in: path
+        description: role's name (not id!)
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/roles/{role-name}/composites:
+    get:
+      tags:
+      - Roles
+      summary: Get composites of the role
+      parameters:
+      - name: role-name
+        in: path
+        description: role's name (not id!)
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleRepresentation'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+    post:
+      tags:
+      - Roles
+      summary: Add a composite to the role
+      parameters:
+      - name: role-name
+        in: path
+        description: role's name (not id!)
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/RoleRepresentation'
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+    delete:
+      tags:
+      - Roles
+      summary: Remove roles from the role's composite
+      parameters:
+      - name: role-name
+        in: path
+        description: role's name (not id!)
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/RoleRepresentation'
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/users:
+    get:
+      tags:
+      - Users
+      summary: Get users Returns a stream of users, filtered according to query parameters.
+      parameters:
+      - name: briefRepresentation
+        in: query
+        description: 'Boolean which defines whether brief representations are returned (default: false)'
+        schema:
+          type: boolean
+      - name: email
+        in: query
+        description: A String contained in email, or the complete email, if param "exact" is true
+        schema:
+          type: string
+      - name: emailVerified
+        in: query
+        description: whether the email has been verified
+        schema:
+          type: boolean
+      - name: enabled
+        in: query
+        description: Boolean representing if user is enabled or not
+        schema:
+          type: boolean
+      - name: exact
+        in: query
+        description: Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+        schema:
+          type: boolean
+      - name: first
+        in: query
+        description: Pagination offset
+        schema:
+          format: int32
+          type: integer
+      - name: firstName
+        in: query
+        description: A String contained in firstName, or the complete firstName, if param "exact" is true
+        schema:
+          type: string
+      - name: idpAlias
+        in: query
+        description: The alias of an Identity Provider linked to the user
+        schema:
+          type: string
+      - name: idpUserId
+        in: query
+        description: The userId at an Identity Provider linked to the user
+        schema:
+          type: string
+      - name: lastName
+        in: query
+        description: A String contained in lastName, or the complete lastName, if param "exact" is true
+        schema:
+          type: string
+      - name: max
+        in: query
+        description: Maximum results size (defaults to 100)
+        schema:
+          format: int32
+          type: integer
+      - name: q
+        in: query
+        description: A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+        schema:
+          type: string
+      - name: search
+        in: query
+        description: A String contained in username, first or last name, or email. Default search behavior is prefix-based
+          (e.g., foo or foo*). Use *foo* for infix search and "foo" for exact search.
+        schema:
+          type: string
+      - name: username
+        in: query
+        description: A String contained in username, or the complete username, if param "exact" is true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRepresentation'
+        '403':
+          description: Forbidden
+    post:
+      tags:
+      - Users
+      summary: Create a new user Username must be unique.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRepresentation'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+          content: {}
+        '403':
+          description: Forbidden
+        '409':
+          description: Conflict
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/users/{user-id}/reset-password:
+    put:
+      tags:
+      - Users
+      summary: Set up a new password for the user.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialRepresentation'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '500':
+          description: Internal Server Error
+          content: {}
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+    - name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/users/{user-id}/role-mappings/realm:
+    get:
+      tags:
+      - Role Mapper
+      summary: Get realm-level role mappings
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleRepresentation'
+        '403':
+          description: Forbidden
+    post:
+      tags:
+      - Role Mapper
+      summary: Add realm-level role mappings to the user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/RoleRepresentation'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+    delete:
+      tags:
+      - Role Mapper
+      summary: Delete realm-level role mappings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/RoleRepresentation'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+    - name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/groups:
+    get:
+      tags:
+      - Groups
+      summary: Get group hierarchy.  Only `name` and `id` are returned.  `subGroups` are only returned when using the `search`
+        or `q` parameter. If none of these parameters is provided, the top-level groups are returned without `subGroups` being
+        filled.
+      parameters:
+      - name: briefRepresentation
+        in: query
+        schema:
+          default: true
+          type: boolean
+      - name: exact
+        in: query
+        schema:
+          default: 'false'
+          type: boolean
+      - name: first
+        in: query
+        schema:
+          format: int32
+          type: integer
+      - name: max
+        in: query
+        schema:
+          format: int32
+          type: integer
+      - name: populateHierarchy
+        in: query
+        schema:
+          default: true
+          type: boolean
+      - name: q
+        in: query
+        schema:
+          type: string
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: subGroupsCount
+        in: query
+        description: 'Boolean which defines whether to return the count of subgroups for each group (default: true'
+        schema:
+          default: 'true'
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupRepresentation'
+    post:
+      tags:
+      - Groups
+      summary: create or add a top level realm groupSet or create child.
+      description: This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t
+        exist.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRepresentation'
+      responses:
+        '201':
+          description: Created
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '409':
+          description: Conflict
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/users/{user-id}/groups:
+    get:
+      tags:
+      - Users
+      parameters:
+      - name: briefRepresentation
+        in: query
+        schema:
+          default: true
+          type: boolean
+      - name: first
+        in: query
+        schema:
+          format: int32
+          type: integer
+      - name: max
+        in: query
+        schema:
+          format: int32
+          type: integer
+      - name: search
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupRepresentation'
+        '403':
+          description: Forbidden
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+    - name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+  /admin/realms/{realm}/users/{user-id}/groups/{groupId}:
+    put:
+      tags:
+      - Users
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+    delete:
+      tags:
+      - Users
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          content: {}
+    parameters:
+    - name: realm
+      in: path
+      description: realm name (not id!)
+      required: true
+      schema:
+        type: string
+    - name: user-id
+      in: path
+      required: true
+      schema:
+        type: string
+components:
+  schemas:
+    Composites:
+      type: object
+      properties:
+        realm:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        client:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        application:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          deprecated: true
+    CredentialRepresentation:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        userLabel:
+          type: string
+        createdDate:
+          format: int64
+          type: integer
+        secretData:
+          type: string
+        credentialData:
+          type: string
+        priority:
+          format: int32
+          type: integer
+        value:
+          type: string
+        temporary:
+          type: boolean
+        device:
+          type: string
+          deprecated: true
+        hashedSaltedValue:
+          type: string
+          deprecated: true
+        salt:
+          type: string
+          deprecated: true
+        hashIterations:
+          format: int32
+          type: integer
+          deprecated: true
+        counter:
+          format: int32
+          type: integer
+          deprecated: true
+        algorithm:
+          type: string
+          deprecated: true
+        digits:
+          format: int32
+          type: integer
+          deprecated: true
+        period:
+          format: int32
+          type: integer
+          deprecated: true
+        config:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/MultivaluedHashMapStringString'
+          deprecated: true
+        federationLink:
+          type: string
+    FederatedIdentityRepresentation:
+      type: object
+      properties:
+        identityProvider:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+    GroupRepresentation:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        path:
+          type: string
+        parentId:
+          type: string
+        subGroupCount:
+          format: int64
+          type: integer
+        subGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupRepresentation'
+        attributes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        realmRoles:
+          type: array
+          items:
+            type: string
+        clientRoles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        access:
+          type: object
+          additionalProperties:
+            type: boolean
+    MultivaluedHashMapStringString:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+    RoleRepresentation:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        scopeParamRequired:
+          type: boolean
+          deprecated: true
+        composite:
+          type: boolean
+        composites:
+          $ref: '#/components/schemas/Composites'
+        clientRole:
+          type: boolean
+        containerId:
+          type: string
+        attributes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    SocialLinkRepresentation:
+      type: object
+      properties:
+        socialProvider:
+          type: string
+        socialUserId:
+          type: string
+        socialUsername:
+          type: string
+    UserConsentRepresentation:
+      type: object
+      properties:
+        clientId:
+          type: string
+        grantedClientScopes:
+          type: array
+          items:
+            type: string
+        createdDate:
+          format: int64
+          type: integer
+        lastUpdatedDate:
+          format: int64
+          type: integer
+        grantedRealmRoles:
+          type: array
+          items:
+            type: string
+          deprecated: true
+    UserProfileAttributeGroupMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+        displayHeader:
+          type: string
+        displayDescription:
+          type: string
+        annotations:
+          type: object
+          additionalProperties: {}
+    UserProfileAttributeMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        required:
+          type: boolean
+        readOnly:
+          type: boolean
+        annotations:
+          type: object
+          additionalProperties: {}
+        validators:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: {}
+        group:
+          type: string
+        multivalued:
+          type: boolean
+        defaultValue:
+          type: string
+    UserProfileMetadata:
+      type: object
+      properties:
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfileAttributeMetadata'
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfileAttributeGroupMetadata'
+    UserRepresentation:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        emailVerified:
+          type: boolean
+        attributes:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        userProfileMetadata:
+          $ref: '#/components/schemas/UserProfileMetadata'
+        enabled:
+          type: boolean
+        self:
+          type: string
+        origin:
+          type: string
+        createdTimestamp:
+          format: int64
+          type: integer
+        totp:
+          type: boolean
+        federationLink:
+          type: string
+        serviceAccountClientId:
+          type: string
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialRepresentation'
+        disableableCredentialTypes:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        requiredActions:
+          type: array
+          items:
+            type: string
+        federatedIdentities:
+          type: array
+          items:
+            $ref: '#/components/schemas/FederatedIdentityRepresentation'
+        realmRoles:
+          type: array
+          items:
+            type: string
+        clientRoles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        clientConsents:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserConsentRepresentation'
+        notBefore:
+          format: int32
+          type: integer
+        applicationRoles:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          deprecated: true
+        socialLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/SocialLinkRepresentation'
+          deprecated: true
+        groups:
+          type: array
+          items:
+            type: string
+        access:
+          type: object
+          additionalProperties:
+            type: boolean

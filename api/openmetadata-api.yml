@@ -1,0 +1,1405 @@
+openapi: 3.0.1
+info:
+  title: OpenMetadata API (Shared Subset)
+  description: Subset of OpenMetadata APIs used by DataFabric and fabrion-init.
+  version: 1.3.0
+servers:
+  - url: http://localhost:8585/api
+tags:
+  - name: Users
+  - name: Teams
+  - name: Domains
+  - name: Database Services
+  - name: Ingestion Pipelines
+  - name: Tables
+  - name: Feeds
+  - name: Suggestions
+  - name: Events
+  - name: Lineage
+  - name: Search
+  - name: Classifications
+  - name: Glossary
+
+paths:
+  # --- Authentication (Epic 1, 15) ---
+  /v1/users/login:
+    post:
+      tags: [Users]
+      summary: Login User
+      operationId: loginUserWithPwd
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: JWT Token Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwtResponse'
+
+  /v1/users:
+    get:
+      tags: [Users]
+      summary: List users
+      operationId: listUsers
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: fields
+          in: query
+          schema:
+            type: string
+            example: profile,roles,teams
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+    post:
+      tags: [Users]
+      summary: Create a user
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /v1/users/name/{name}:
+    get:
+      tags: [Users]
+      summary: Get a user by name
+      operationId: getUserByFQN
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fields
+          in: query
+          schema:
+            type: string
+            example: profile,roles,teams
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /v1/users/{id}:
+    patch:
+      tags: [Users]
+      summary: Update a user
+      operationId: patchUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/JsonPatch'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # --- Teams (Bootstrap) ---
+  /v1/teams:
+    get:
+      tags: [Teams]
+      summary: List teams
+      operationId: listTeams
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: fields
+          in: query
+          schema:
+            type: string
+            example: users,owns,defaultRoles
+      responses:
+        '200':
+          description: List of teams
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamList'
+    post:
+      tags: [Teams]
+      summary: Create a team
+      operationId: createTeam
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeam'
+      responses:
+        '200':
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+
+    put:
+      tags: [Teams]
+      summary: Create or update a team
+      operationId: createOrUpdateTeam
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeam'
+      responses:
+        '200':
+          description: Team created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+
+  /v1/teams/name/{name}:
+    get:
+      tags: [Teams]
+      summary: Get a team by name
+      operationId: getTeamByName
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fields
+          in: query
+          schema:
+            type: string
+            example: users,owns,defaultRoles
+      responses:
+        '200':
+          description: The team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+
+  /v1/teams/{id}:
+    patch:
+      tags: [Teams]
+      summary: Update a team
+      operationId: patchTeam
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/JsonPatch'
+      responses:
+        '200':
+          description: Team updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+
+  # --- Domains (Bootstrap) ---
+  /v1/domains:
+    get:
+      tags: [Domains]
+      summary: List domains
+      operationId: listDomains
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: fields
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of domains
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainList'
+    post:
+      tags: [Domains]
+      summary: Create a domain
+      operationId: createDomain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomain'
+      responses:
+        '200':
+          description: Domain created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+
+    put:
+      tags: [Domains]
+      summary: Create or update a domain
+      operationId: createOrUpdateDomain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomain'
+      responses:
+        '200':
+          description: Domain created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+
+  /v1/domains/name/{name}:
+    get:
+      tags: [Domains]
+      summary: Get a domain by name
+      operationId: getDomainByName
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fields
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The domain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+
+  /v1/domains/{id}:
+    patch:
+      tags: [Domains]
+      summary: Update a domain
+      operationId: patchDomain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/JsonPatch'
+      responses:
+        '200':
+          description: Domain updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+
+  /v1/services/databaseServices/name/{fqn}:
+    get:
+      tags: [Database Services]
+      summary: Get a database service by fully qualified name
+      operationId: getDatabaseServiceByFQN
+      parameters:
+        - name: fqn
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fields
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The database service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseService'
+
+  # --- Infrastructure & Ingestion (Epic 2, 6) ---
+  /v1/services/databaseServices:
+    get:
+      tags: [Database Services]
+      summary: List database services
+      operationId: listDatabaseServices
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of services
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseServiceList'
+    post:
+      tags: [Database Services]
+      summary: Create database service
+      operationId: createDatabaseService
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatabaseService'
+      responses:
+        '200':
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseService'
+    put:
+      tags: [Database Services]
+      summary: Create or update a database service
+      operationId: createOrUpdateDatabaseService
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatabaseService'
+      responses:
+        '200':
+          description: Service created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseService'
+
+  /v1/services/ingestionPipelines:
+    get:
+      tags: [Ingestion Pipelines]
+      summary: List ingestion pipelines
+      operationId: listIngestionPipelines
+      parameters:
+        - name: service
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of pipelines
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionPipelineList'
+    post:
+      tags: [Ingestion Pipelines]
+      summary: Create an ingestion pipeline
+      operationId: createIngestionPipeline
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIngestionPipeline'
+      responses:
+        '200':
+          description: Pipeline created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionPipeline'
+
+    put:
+      tags: [Ingestion Pipelines]
+      summary: Create or update an ingestion pipeline
+      operationId: createOrUpdateIngestionPipeline
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIngestionPipeline'
+      responses:
+        '200':
+          description: Pipeline created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionPipeline'
+
+  /v1/services/ingestionPipelines/deploy/{id}:
+    post:
+      tags: [Ingestion Pipelines]
+      summary: Deploy an ingestion pipeline
+      operationId: deployIngestionPipeline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deploy status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineServiceClientResponse'
+
+  /v1/services/ingestionPipelines/trigger/{id}:
+    post:
+      tags: [Ingestion Pipelines]
+      summary: Trigger an ingestion pipeline run
+      operationId: triggerIngestionPipelineRun
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trigger status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineServiceClientResponse'
+
+  # --- Data Assets (Epic 5, 7, 9, 13) ---
+  /v1/tables:
+    get:
+      tags: [Tables]
+      summary: List tables
+      operationId: listTables
+      parameters:
+        - name: database
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of tables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableList'
+    post:
+      tags: [Tables]
+      summary: Create a table
+      operationId: createTable
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTable'
+      responses:
+        '200':
+          description: Table created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+
+  /v1/tables/name/{fqn}:
+    get:
+      tags: [Tables]
+      summary: Get a table by fully qualified name
+      operationId: getTableByFQN
+      parameters:
+        - name: fqn
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fields
+          in: query
+          schema:
+            type: string
+            example: columns,tags,owners
+      responses:
+        '200':
+          description: The table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+
+  /v1/tables/{id}:
+    patch:
+      tags: [Tables]
+      summary: Update a table using JSON Patch
+      operationId: patchTable
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/JsonPatch'
+      responses:
+        '200':
+          description: Table updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+
+  /v1/search/query:
+    get:
+      tags: [Search]
+      summary: Search entities
+      operationId: searchEntities
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: index
+          in: query
+          schema:
+            type: string
+            default: table_search_index
+      responses:
+        '200':
+          description: Search response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  # --- Collaboration / Agent Interface (Epic 3, 8, 11) ---
+  /v1/feed:
+    get:
+      tags: [Feeds]
+      summary: List threads
+      operationId: listThreads
+      parameters:
+        - name: entityLink
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of threads
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadList'
+    post:
+      tags: [Feeds]
+      summary: Create a thread
+      operationId: createThread
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateThread'
+      responses:
+        '200':
+          description: Thread created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+
+  /v1/feed/{threadId}/posts:
+    post:
+      tags: [Feeds]
+      summary: Add a post/reply to a thread
+      operationId: addPostToThread
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePost'
+      responses:
+        '200':
+          description: Post added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+
+  /v1/suggestions:
+    get:
+      tags: [Suggestions]
+      summary: List Suggestions
+      operationId: listSuggestions
+      parameters:
+        - name: entityFQN
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            default: Open
+      responses:
+        '200':
+          description: List of Suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionList'
+    post:
+      tags: [Suggestions]
+      summary: Create a Suggestion
+      operationId: createSuggestion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSuggestion'
+      responses:
+        '200':
+          description: Suggestion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suggestion'
+
+  # --- Lineage (Epic 7) ---
+  /v1/lineage:
+    put:
+      tags: [Lineage]
+      summary: Add a lineage edge
+      operationId: addLineageEdge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLineage'
+      responses:
+        '200':
+          description: OK
+
+  /v1/lineage/{entityType}/name/{fqn}:
+    get:
+      tags: [Lineage]
+      summary: Get lineage for an entity by FQN
+      operationId: getLineageByFQN
+      parameters:
+        - name: entityType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [table, dashboard, pipeline, topic, container, mlmodel]
+        - name: fqn
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Fully qualified name of the entity
+        - name: upstreamDepth
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: downstreamDepth
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Entity lineage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityLineage'
+
+  # --- Classifications (MCP Read Tools) ---
+  /v1/classifications:
+    get:
+      tags: [Classifications]
+      summary: List classifications
+      operationId: listClassifications
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of classifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassificationList'
+
+  # --- Glossary (MCP Read/Write Tools) ---
+  /v1/glossaries:
+    get:
+      tags: [Glossary]
+      summary: List glossaries
+      operationId: listGlossaries
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of glossaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryList'
+    post:
+      tags: [Glossary]
+      summary: Create a glossary
+      operationId: createGlossary
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGlossary'
+      responses:
+        '200':
+          description: Glossary created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Glossary'
+
+  /v1/glossaryTerms:
+    get:
+      tags: [Glossary]
+      summary: List glossary terms
+      operationId: listGlossaryTerms
+      parameters:
+        - name: glossary
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of glossary terms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryTermList'
+    post:
+      tags: [Glossary]
+      summary: Create a glossary term
+      operationId: createGlossaryTerm
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGlossaryTerm'
+      responses:
+        '200':
+          description: Glossary term created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryTerm'
+
+  # --- Events / Webhooks (Epic 2, 4) ---
+  /v1/events/subscriptions:
+    get:
+      tags: [Events]
+      summary: List Event Subscriptions
+      operationId: listEventSubscriptions
+      responses:
+        '200':
+          description: List of subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventSubscriptionList'
+    post:
+      tags: [Events]
+      summary: Create Event Subscription
+      operationId: createEventSubscription
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventSubscription'
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventSubscription'
+
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string }
+        password: { type: string }
+    JwtResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string }
+        expiryDuration: { type: integer, format: int64 }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        isAdmin: { type: boolean }
+        isBot: { type: boolean }
+        profile: { $ref: '#/components/schemas/Profile' }
+        teams:
+          type: array
+          items: { $ref: '#/components/schemas/EntityReference' }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/EntityReference' }
+
+    CreateUser:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        isAdmin: { type: boolean }
+        isBot: { type: boolean }
+        teams:
+          type: array
+          items: { type: string, format: uuid }
+        roles:
+          type: array
+          items: { type: string, format: uuid }
+
+    Team:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        teamType:
+          type: string
+          enum: [Group, Department, Division, BusinessUnit, Organization]
+        parents:
+          type: array
+          items: { $ref: '#/components/schemas/EntityReference' }
+        users:
+          type: array
+          items: { $ref: '#/components/schemas/EntityReference' }
+        domains:
+          type: array
+          items: { $ref: '#/components/schemas/EntityReference' }
+
+    CreateTeam:
+      type: object
+      required: [name, teamType]
+      properties:
+        name: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        teamType:
+          type: string
+          enum: [Group, Department, Division, BusinessUnit, Organization]
+        parents:
+          type: array
+          items: { type: string, format: uuid }
+        users:
+          type: array
+          items: { type: string, format: uuid }
+        domains:
+          type: array
+          items: { type: string, format: uuid }
+
+    Domain:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        fullyQualifiedName: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        domainType:
+          type: string
+          enum: [Source-aligned, Consumer-aligned, Aggregate]
+        parent: { $ref: '#/components/schemas/EntityReference' }
+
+    CreateDomain:
+      type: object
+      required: [name, domainType]
+      properties:
+        name: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        domainType:
+          type: string
+          enum: [Source-aligned, Consumer-aligned, Aggregate]
+        parent: { type: string }
+
+    JsonPatch:
+      type: object
+      properties:
+        op:
+          type: string
+          enum: [add, remove, replace, move, copy, test]
+        path: { type: string }
+        value: { }
+        from: { type: string }
+
+    CreateDatabaseService:
+      type: object
+      required: [name, serviceType, connection]
+      properties:
+        name: { type: string }
+        serviceType: 
+          type: string
+          enum: [Mysql, Postgres, Snowflake, BigQuery, Redshift]
+        connection: { $ref: '#/components/schemas/DatabaseConnection' }
+
+    DatabaseService:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        serviceType: { type: string }
+        connection: { $ref: '#/components/schemas/DatabaseConnection' }
+
+    CreateIngestionPipeline:
+      type: object
+      required: [name, pipelineType, service, sourceConfig]
+      properties:
+        name: { type: string }
+        pipelineType: 
+          type: string
+          enum: [metadata, usage, lineage, profiler, dbt]
+        service: { $ref: '#/components/schemas/EntityReference' }
+        sourceConfig: { type: object }
+        airflowConfig: { type: object }
+
+    IngestionPipeline:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        pipelineType: { type: string }
+        deployed: { type: boolean }
+        enabled: { type: boolean }
+        pipelineStatuses: { type: object }
+
+    PipelineServiceClientResponse:
+      type: object
+      properties:
+        code: { type: integer }
+        reason: { type: string }
+
+    CreateTable:
+      type: object
+      required: [name, columns, databaseSchema]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        columns: 
+          type: array
+          items: { $ref: '#/components/schemas/Column' }
+        databaseSchema: { type: string } # FQN
+
+    Table:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        fullyQualifiedName: { type: string }
+        description: { type: string }
+        columns:
+          type: array
+          items: { $ref: '#/components/schemas/Column' }
+        tags:
+          type: array
+          items: { $ref: '#/components/schemas/TagLabel' }
+        tableConstraints: { type: array, items: { type: object } }
+        domain:
+          $ref: '#/components/schemas/EntityReference'
+
+    Column:
+      type: object
+      properties:
+        name: { type: string }
+        dataType: { type: string }
+        description: { type: string }
+        tags: 
+          type: array
+          items: { $ref: '#/components/schemas/TagLabel' }
+
+    CreateThread:
+      type: object
+      required: [message, from, about]
+      properties:
+        message: { type: string }
+        from: { type: string }
+        about: { type: string } # Entity Link
+
+    Thread:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        message: { type: string }
+        posts: 
+          type: array
+          items: { $ref: '#/components/schemas/Post' }
+
+    Post:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        message: { type: string }
+        from: { type: string }
+
+    CreatePost:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        from: { type: string }
+
+    CreateSuggestion:
+      type: object
+      properties:
+        type: 
+          type: string
+          enum: [SuggestDescription, SuggestTagLabel]
+        description: { type: string }
+        entityLink: { type: string }
+        tagLabels:
+          type: array
+          items: { $ref: '#/components/schemas/TagLabel' }
+
+    Suggestion:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string }
+        description: { type: string }
+        status: { type: string }
+        createdBy: { $ref: '#/components/schemas/EntityReference' }
+
+    CreateEventSubscription:
+      type: object
+      required: [name, alertType, destinations]
+      properties:
+        name: { type: string }
+        alertType: 
+          type: string
+          enum: [Notification, Observability]
+        destinations:
+          type: array
+          items: { type: object }
+        filteringRules: { type: object }
+
+    EventSubscription:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        enabled: { type: boolean }
+
+    AddLineage:
+      type: object
+      required: [edge]
+      properties:
+        edge:
+          type: object
+          properties:
+            fromEntity: { $ref: '#/components/schemas/EntityReference' }
+            toEntity: { $ref: '#/components/schemas/EntityReference' }
+
+    # --- Lineage Read Schema ---
+    EntityLineage:
+      type: object
+      properties:
+        entity:
+          $ref: '#/components/schemas/EntityReference'
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityReference'
+        upstreamEdges:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineageEdge'
+        downstreamEdges:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineageEdge'
+
+    LineageEdge:
+      type: object
+      properties:
+        fromEntity:
+          $ref: '#/components/schemas/EntityReference'
+        toEntity:
+          $ref: '#/components/schemas/EntityReference'
+
+    # --- Classification Schemas ---
+    Classification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        fullyQualifiedName: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+
+    # --- Glossary Schemas ---
+    Glossary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        fullyQualifiedName: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+
+    GlossaryTerm:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        fullyQualifiedName: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        glossary:
+          $ref: '#/components/schemas/EntityReference'
+
+    CreateGlossary:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+
+    CreateGlossaryTerm:
+      type: object
+      required: [name, glossary]
+      properties:
+        name: { type: string }
+        glossary: { type: string }
+        displayName: { type: string }
+        description: { type: string }
+        synonyms:
+          type: array
+          items: { type: string }
+
+    SearchResponse:
+      type: object
+      properties:
+        hits:
+          type: object
+          properties:
+            total: { type: object }
+            hits:
+              type: array
+              items:
+                type: object
+                properties:
+                  _source: { type: object }
+
+    # --- Common Shared Schemas ---
+    EntityReference:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string }
+        name: { type: string }
+        fullyQualifiedName: { type: string }
+        description: { type: string }
+
+    TagLabel:
+      type: object
+      properties:
+        tagFQN: { type: string }
+        source: { type: string }
+        labelType: { type: string }
+        state: { type: string }
+
+    Paging:
+      type: object
+      properties:
+        total: { type: integer }
+        before: { type: string }
+        after: { type: string }
+
+    Profile:
+      type: object
+      properties:
+        images: { type: object }
+
+    DatabaseConnection:
+      type: object
+      properties:
+        config: { type: object }
+
+    # Response List Wrappers
+    DatabaseServiceList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/DatabaseService' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    IngestionPipelineList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/IngestionPipeline' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    TableList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Table' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    ThreadList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Thread' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    SuggestionList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Suggestion' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    EventSubscriptionList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/EventSubscription' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    UserList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/User' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    TeamList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Team' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    DomainList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Domain' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    ClassificationList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Classification' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    GlossaryList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Glossary' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+    GlossaryTermList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/GlossaryTerm' } }
+        paging: { $ref: '#/components/schemas/Paging' }
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

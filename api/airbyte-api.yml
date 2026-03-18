@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: Airbyte API
+  version: 1.0.0
+servers:
+  - url: https://api.airbyte.com/v1
+paths:
+  /connections:
+    get:
+      summary: List Connections
+      operationId: listConnections
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: workspaceIds
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+          style: form
+          explode: false
+          description: UUIDs of workspaces to filter connections by. Empty for all.
+        - in: query
+          name: includeDeleted
+          schema:
+            type: boolean
+            default: false
+          description: Include deleted connections.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Limit number of connections returned.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Offset for pagination.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionListResponse"
+        "403":
+          description: Not allowed
+        "404":
+          description: Not found
+  /jobs:
+    get:
+      summary: List Jobs by sync type
+      operationId: listJobs
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: connectionId
+          schema:
+            type: string
+            format: uuid
+          description: Filter the Jobs by connectionId.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Limit number of jobs returned.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Offset for pagination.
+        - in: query
+          name: jobType
+          schema:
+            type: string
+            enum: [sync, reset]
+          description: Filter the Jobs by jobType.
+        - in: query
+          name: workspaceIds
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+          style: form
+          explode: false
+          description: UUIDs of workspaces to filter jobs by. Empty for all.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, running, incomplete, failed, succeeded, cancelled]
+          description: The Job status you want to filter by.
+        - in: query
+          name: createdAtStart
+          schema:
+            type: string
+            format: date-time
+          description: The start date to filter by.
+        - in: query
+          name: createdAtEnd
+          schema:
+            type: string
+            format: date-time
+          description: The end date to filter by.
+        - in: query
+          name: updatedAtStart
+          schema:
+            type: string
+            format: date-time
+          description: The start date to filter by.
+        - in: query
+          name: updatedAtEnd
+          schema:
+            type: string
+            format: date-time
+          description: The end date to filter by.
+        - in: query
+          name: orderBy
+          schema:
+            type: string
+            enum: [createdAt, updatedAt]
+          description: The field and method to use for ordering.
+      responses:
+        "200":
+          description: List all the Jobs by connectionId.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobListResponse"
+        "403":
+          description: Not allowed
+    post:
+      summary: Trigger a sync or reset job of a connection
+      operationId: triggerJob
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerJobRequest"
+      responses:
+        "200":
+          description: Kicks off a new Job based on the JobType.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+        "400":
+          description: Invalid data
+        "403":
+          description: Not allowed
+  /applications/token:
+    post:
+      summary: Get an Access Token
+      operationId: getAccessToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessTokenRequest"
+      responses:
+        "200":
+          description: Creates an Access Token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessTokenResponse"
+        "400":
+          description: Invalid data
+        "403":
+          description: Not allowed
+
+  /jobs/{jobId}:
+    get:
+      summary: Get Job by ID
+      operationId: getJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Numeric ID of the job to retrieve.
+      responses:
+        "200":
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobDetailResponse"
+        "404":
+          description: Job not found
+        "403":
+          description: Not allowed
+    delete:
+      summary: Cancel a running Job
+      operationId: cancelJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: The job ID to cancel
+      responses:
+        "200":
+          description: Cancel a Job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "403":
+          description: Not allowed
+        "404":
+          description: Not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    FieldPath:
+      type: object
+      properties:
+        fieldPath:
+          type: array
+          items:
+            type: string
+
+    Stream:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        syncMode:
+          type: string
+        cursorField:
+          type: array
+          items:
+            type: string
+        primaryKey:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        includeFiles:
+          type: boolean
+        selectedFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldPath"
+        mappers:
+          type: array
+          items:
+            type: object
+
+    Schedule:
+      type: object
+      properties:
+        scheduleType:
+          type: string
+
+    Connection:
+      type: object
+      properties:
+        connectionId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sourceId:
+          type: string
+          format: uuid
+        destinationId:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        schedule:
+          $ref: "#/components/schemas/Schedule"
+        configurations:
+          type: object
+          properties:
+            streams:
+              type: array
+              items:
+                $ref: "#/components/schemas/Stream"
+        createdAt:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        nonBreakingSchemaUpdatesBehavior:
+          type: string
+        namespaceDefinition:
+          type: string
+        prefix:
+          type: string
+
+    ConnectionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Connection"
+        previous:
+          type: string
+        next:
+          type: string
+    Job:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        status:
+          type: string
+        jobType:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        connectionId:
+          type: string
+          format: uuid
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        duration:
+          type: string
+        bytesSynced:
+          type: integer
+        rowsSynced:
+          type: integer
+
+    JobListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Job"
+        previous:
+          type: string
+        next:
+          type: string
+    TriggerJobRequest:
+      type: object
+      required:
+        - connectionId
+        - jobType
+      properties:
+        connectionId:
+          type: string
+          format: uuid
+        jobType:
+          type: string
+          enum: [sync, reset]
+
+    JobResponse:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        status:
+          type: string
+        jobType:
+          type: string
+    AccessTokenRequest:
+      type: object
+      required:
+        - client_id
+        - client_secret
+        - grant_type
+      properties:
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        grant_type:
+          type: string
+          enum: [client_credentials]
+
+    AccessTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+
+    JobDetailResponse:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        status:
+          type: string
+        jobType:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        connectionId:
+          type: string
+          format: uuid
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        duration:
+          type: string
+        bytesSynced:
+          type: integer
+        rowsSynced:
+          type: integer

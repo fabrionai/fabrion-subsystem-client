@@ -1,0 +1,356 @@
+openapi: 3.0.3
+info:
+  title: Flowise API
+  description: API for interacting with Flowise LLM workflow automation platform
+  version: 1.0.0
+  contact:
+    name: FlowiseAI
+    url: https://flowiseai.com
+
+servers:
+  - url: http://localhost:3000
+    description: Local Flowise instance
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/chatflows:
+    get:
+      operationId: getChatflows
+      summary: List all chatflows
+      description: Retrieves all chatflows available in the Flowise instance
+      tags:
+        - Chatflows
+      responses:
+        '200':
+          description: Successfully retrieved chatflows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chatflow'
+        '401':
+          description: Unauthorized - Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/chatflows/{id}:
+    get:
+      operationId: getChatflowById
+      summary: Get a specific chatflow
+      description: Retrieves a chatflow by its unique identifier
+      tags:
+        - Chatflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the chatflow
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved chatflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chatflow'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Chatflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/prediction/{id}:
+    post:
+      operationId: createPrediction
+      summary: Create a prediction
+      description: |
+        Triggers a prediction (workflow execution) for the specified chatflow.
+        Flowise predictions are synchronous - the response contains the AI-generated result.
+      tags:
+        - Prediction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The chatflow ID to run prediction against
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionRequest'
+      responses:
+        '200':
+          description: Successfully created prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionResponse'
+        '400':
+          description: Bad request - Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Chatflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Bearer authentication header of the form Bearer <token>
+
+  schemas:
+    Chatflow:
+      type: object
+      description: Represents a Flowise chatflow (workflow)
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the chatflow
+          example: "abc123-def456"
+        name:
+          type: string
+          description: Display name of the chatflow
+          example: "Customer Support Bot"
+        flowData:
+          type: string
+          description: JSON string containing the workflow definition
+        deployed:
+          type: boolean
+          description: Whether the chatflow is deployed and active
+          default: false
+        isPublic:
+          type: boolean
+          description: Whether the chatflow is publicly accessible
+          default: false
+        apikeyid:
+          type: string
+          description: Associated API key ID for this chatflow
+          nullable: true
+        chatbotConfig:
+          type: string
+          description: JSON string containing chatbot configuration
+          nullable: true
+        apiConfig:
+          type: string
+          description: JSON string containing API-specific settings
+          nullable: true
+        analytic:
+          type: string
+          description: JSON string containing analytics configuration
+          nullable: true
+        speechToText:
+          type: string
+          description: JSON string containing speech-to-text settings
+          nullable: true
+        category:
+          type: string
+          description: Semicolon-delimited categories
+          nullable: true
+          example: "customer-service;chatbot"
+        type:
+          type: string
+          description: Type of flow
+          enum:
+            - CHATFLOW
+            - MULTIAGENT
+          default: CHATFLOW
+        createdDate:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of creation
+        updatedDate:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of last update
+      required:
+        - id
+        - name
+
+    PredictionRequest:
+      type: object
+      description: Request body for creating a prediction
+      properties:
+        question:
+          type: string
+          description: The message/question to send to the chatflow
+          example: "What is the weather today?"
+        streaming:
+          type: boolean
+          description: Enable real-time streaming responses
+          default: false
+        overrideConfig:
+          type: object
+          description: Runtime configuration overrides and variables
+          additionalProperties: true
+        history:
+          type: array
+          description: Previous conversation messages for context
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        uploads:
+          type: array
+          description: File uploads (images, audio, documents) as base64 or URLs
+          items:
+            $ref: '#/components/schemas/Upload'
+      required:
+        - question
+
+    PredictionResponse:
+      type: object
+      description: Response from a prediction request
+      properties:
+        text:
+          type: string
+          description: AI-generated response text
+        json:
+          type: object
+          description: Structured output if applicable
+          additionalProperties: true
+        chatId:
+          type: string
+          description: Session identifier for the chat
+        chatMessageId:
+          type: string
+          description: Unique identifier for this message
+        sessionId:
+          type: string
+          description: Conversation continuity token
+        sourceDocuments:
+          type: array
+          description: Retrieved documents (for RAG workflows)
+          items:
+            $ref: '#/components/schemas/SourceDocument'
+        usedTools:
+          type: array
+          description: Tools that were invoked during prediction
+          items:
+            $ref: '#/components/schemas/UsedTool'
+        agentReasoning:
+          type: array
+          description: Agent reasoning steps (for agent workflows)
+          items:
+            type: object
+            additionalProperties: true
+
+    ChatMessage:
+      type: object
+      description: A chat message in conversation history
+      properties:
+        role:
+          type: string
+          description: Role of the message sender
+          enum:
+            - user
+            - assistant
+            - system
+        content:
+          type: string
+          description: Content of the message
+      required:
+        - role
+        - content
+
+    Upload:
+      type: object
+      description: File upload for prediction
+      properties:
+        data:
+          type: string
+          description: Base64 encoded file data or URL
+        type:
+          type: string
+          description: MIME type of the file
+          example: "image/png"
+        name:
+          type: string
+          description: Original filename
+        mime:
+          type: string
+          description: MIME type (alternative to type field)
+
+    SourceDocument:
+      type: object
+      description: A source document retrieved during RAG
+      properties:
+        pageContent:
+          type: string
+          description: Content of the document chunk
+        metadata:
+          type: object
+          description: Document metadata
+          additionalProperties: true
+
+    UsedTool:
+      type: object
+      description: A tool that was used during prediction
+      properties:
+        tool:
+          type: string
+          description: Name of the tool
+        toolInput:
+          type: object
+          description: Input provided to the tool
+          additionalProperties: true
+        toolOutput:
+          type: string
+          description: Output from the tool
+
+    Error:
+      type: object
+      description: Error response
+      properties:
+        message:
+          type: string
+          description: Error message
+        error:
+          type: string
+          description: Error type or code
+      required:
+        - message
