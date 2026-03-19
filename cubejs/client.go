@@ -76,6 +76,41 @@ func (c *Client) SQL(ctx context.Context, q *Query) (*SQLResponse, error) {
 	return &result, nil
 }
 
+// PreAggregations lists all pre-aggregation definitions via GET /cubejs-api/v1/pre-aggregations.
+func (c *Client) PreAggregations(ctx context.Context) (*PreAggregationsResponse, error) {
+	var result PreAggregationsResponse
+	if err := c.doGet(ctx, "/cubejs-api/v1/pre-aggregations", &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// TriggerPreAggregationJobs triggers a pre-aggregation rebuild via POST /cubejs-api/v1/pre-aggregations/jobs.
+func (c *Client) TriggerPreAggregationJobs(ctx context.Context, selector *PreAggregationJobSelector) (PreAggregationJobsResponse, error) {
+	body := PreAggregationJobsRequest{
+		Action:   "post",
+		Selector: selector,
+	}
+	var result PreAggregationJobsResponse
+	if err := c.doPost(ctx, "/cubejs-api/v1/pre-aggregations/jobs", body, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// GetPreAggregationJobStatus checks job status via POST /cubejs-api/v1/pre-aggregations/jobs with tokens.
+func (c *Client) GetPreAggregationJobStatus(ctx context.Context, tokens []string) (PreAggregationJobsResponse, error) {
+	body := PreAggregationJobsRequest{
+		Action: "get",
+		Tokens: tokens,
+	}
+	var result PreAggregationJobsResponse
+	if err := c.doPost(ctx, "/cubejs-api/v1/pre-aggregations/jobs", body, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (c *Client) doGet(ctx context.Context, path string, out any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+path, nil)
 	if err != nil {

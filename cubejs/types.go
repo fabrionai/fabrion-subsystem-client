@@ -121,3 +121,48 @@ type SQL struct {
 	Query  string `json:"query"`
 	Params []any  `json:"params,omitempty"`
 }
+
+// PreAggregationsResponse represents the response from GET /cubejs-api/v1/pre-aggregations.
+type PreAggregationsResponse struct {
+	cubeError
+	PreAggregations []PreAggregation `json:"preAggregations"`
+}
+
+// PreAggregation describes a single pre-aggregation definition.
+type PreAggregation struct {
+	ID             string   `json:"id"`
+	PreAggName     string   `json:"preAggName"`
+	CubeName       string   `json:"cubeName"`
+	Type           string   `json:"type,omitempty"`
+	Granularity    string   `json:"granularity,omitempty"`
+	RefreshKey     any      `json:"refreshKey,omitempty"`
+	Partitions     []string `json:"partitions,omitempty"`
+	IndexesColumns []any    `json:"indexesColumns,omitempty"`
+}
+
+// PreAggregationJobsRequest is the request body for POST /cubejs-api/v1/pre-aggregations/jobs.
+type PreAggregationJobsRequest struct {
+	Action   string                     `json:"action"`
+	Selector *PreAggregationJobSelector `json:"selector,omitempty"`
+	Tokens   []string                   `json:"tokens,omitempty"`
+}
+
+// PreAggregationJobSelector filters which pre-aggregations to target.
+type PreAggregationJobSelector struct {
+	Cubes           []string `json:"cubes,omitempty"`
+	PreAggregations []string `json:"preAggregations,omitempty"`
+	TimezoneFrom    string   `json:"timezoneFrom,omitempty"`
+	TimezoneTo      string   `json:"timezoneTo,omitempty"`
+	Contexts        []any    `json:"contexts,omitempty"`
+}
+
+// PreAggregationJobsResponse represents the response from POST /cubejs-api/v1/pre-aggregations/jobs.
+type PreAggregationJobsResponse []PreAggregationJob
+
+// PreAggregationJob describes the status of a single pre-aggregation job.
+type PreAggregationJob struct {
+	Token    string         `json:"token"`
+	Table    string         `json:"table"`
+	Status   string         `json:"status"`
+	Selector map[string]any `json:"selector,omitempty"`
+}
