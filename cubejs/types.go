@@ -1,6 +1,14 @@
 // Package cubejs provides an HTTP client for the Cube.js REST API.
 package cubejs
 
+// Pre-aggregation job status constants as returned by the Cube.js API.
+const (
+	PreAggJobStatusScheduled  = "scheduled"
+	PreAggJobStatusProcessing = "processing"
+	PreAggJobStatusDone       = "done"
+	PreAggJobStatusError      = "error"
+)
+
 // cubeError is embedded in response types to capture the Cube.js error field
 // (e.g., {"error": "Continue wait"}) without a second JSON unmarshal pass.
 type cubeError struct {
@@ -135,9 +143,11 @@ type PreAggregation struct {
 	CubeName       string   `json:"cubeName"`
 	Type           string   `json:"type,omitempty"`
 	Granularity    string   `json:"granularity,omitempty"`
-	RefreshKey     any      `json:"refreshKey,omitempty"`
-	Partitions     []string `json:"partitions,omitempty"`
-	IndexesColumns []any    `json:"indexesColumns,omitempty"`
+	// RefreshKey is polymorphic in the Cube.js API (can be object with sql/every or a raw value).
+	RefreshKey any `json:"refreshKey,omitempty"`
+	Partitions []string `json:"partitions,omitempty"`
+	// IndexesColumns is a heterogeneous array in the Cube.js API response.
+	IndexesColumns []any `json:"indexesColumns,omitempty"`
 }
 
 // PreAggregationJobsRequest is the request body for POST /cubejs-api/v1/pre-aggregations/jobs.
